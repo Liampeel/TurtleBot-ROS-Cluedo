@@ -10,7 +10,12 @@ class GetCoordinates:
     """ Class to get the x,y coordinates of a particular rooms' centre or entrance. """
 
     def __init__(self, filepath):
-        """ Full path to the particular YAML file containing the coordinates. """
+        """ 
+        Constructor
+
+        :param filepath: Full path to the particular YAML file containing the coordinates.
+        """
+        filepath = path.expanduser(filepath)  # just in case the caller gave relative path.
         if not path.exists(filepath):
             raise EnvironmentError(filepath + " not found")
 
