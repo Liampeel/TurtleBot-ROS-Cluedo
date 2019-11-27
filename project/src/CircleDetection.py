@@ -17,7 +17,8 @@ class colourIdentifier():
 
     def __init__(self):
 
-        self.message_pub = rospy.Publisher('messages', String, queue_size = 10)
+        self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist)
+        self.desired_velocity = Twist()
         self.green_detected = False
         self.green_circle_detected = False
         self.red_detected = False
@@ -25,15 +26,16 @@ class colourIdentifier():
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.callback)
 
-
-
-
+        while not (self.green_detected or self.red_detected):
+            self.desired_velocity.angular.z = 0.2
+            self.pub.publish(self.desired_velocity)
+            if(self.green_detected == True or self.red_detected == True):
+            	self.desired_velocity.angular.z = 0
 
 
     def callback(self, data):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-
 
         except CvBridgeError as e:
             print(e)

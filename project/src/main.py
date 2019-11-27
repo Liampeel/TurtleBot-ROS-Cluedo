@@ -4,7 +4,7 @@ import rospy
 import numpy as np
 from room import RoomOne, RoomTwo
 from go_to_specific_point_on_map import GoToPose
-
+from CircleDetection import colourIdentifier
 
 if __name__ == '__main__':
 
@@ -29,8 +29,19 @@ if __name__ == '__main__':
         rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
         success = navigator.goto(position, quaternion)
 
+
         if success:
             rospy.loginfo("Hooray, reached the desired pose")
+
+            while True:
+                cI=colourIdentifier()
+                rospy.loginfo("HERE")
+                if cI.green_detected:
+                    rospy.loginfo("GREEN")
+                    break
+            rospy.loginfo("DETECTED ONE")
+
+
         else:
             rospy.loginfo("The base failed to reach the desired pose")
 
