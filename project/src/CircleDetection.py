@@ -50,8 +50,8 @@ class colourIdentifier():
         image_res = cv2.bitwise_and(cv_image,cv_image, mask= red_green_mask)
         contours_green, hierarchy = cv2.findContours(image_mask_green.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         contours_red, hierarchy = cv2.findContours(image_mask_red.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        green_circle = cv2.HoughCircles(image_mask_green, cv.CV_HOUGH_GRADIENT, 10, 300, param1 = 300, param2 = 200)
-        red_circle = cv2.HoughCircles(image_mask_red, cv.CV_HOUGH_GRADIENT, 10, 300, param1 = 300, param2 = 200)
+        green_circle = cv2.HoughCircles(image_mask_green, cv.CV_HOUGH_GRADIENT, 80,100, param1 = 700, param2 = 600, minRadius = 1, maxRadius = 200)
+        red_circle = cv2.HoughCircles(image_mask_red, cv.CV_HOUGH_GRADIENT, 100, 120, param1 = 150, param2 = 150)#, param1 = 500, param2 = 400, minRadius = 1, maxRadius = 200 )
 
         width = np.size(image_res, 1)
         centre = (width / 2)
@@ -60,59 +60,43 @@ class colourIdentifier():
             M = cv2.moments(cgreen)
             cxgreen, cygreen = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
 
-            # M = cv2.moments(c)
-            # cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
-            # cxgreen, cygreen = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
-
-            #Check if the area of the shape you want is big enough to be considered
-            # If it is then change the flag for that colour to be True(1)
             if cv2.contourArea(cgreen) > 1000:
-
+                print(cv2.contourArea(cgreen))
                 self.green_detected = True
-                # draw a circle on the contour you're identifying as a blue object as well
-                COLOUR_GREEN = np.array([0,255,0])
-                #COLOUR_RED = np.array([255,0,0])
-                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_BLUE, 1)
-                cv2.circle(cv_image,(cxgreen,cygreen), 25, COLOUR_GREEN, 1)
-                #COLOUR_BLUE = np.array([0,0,255])
-                #COLOUR_GREEN = np.array([0,255,0])
-                #COLOUR_RED = np.array([255,0,0])
-                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_BLUE, 1)
-                #cv2.circle(cv_image,(cxgreen,cygreen), 25, COLOUR_GREEN, 1)
                 print("Green detected")
+                if cv2.contourArea(cgreen) > 8000:
+                    if green_circle is not None:
+                        print("Circle detected")
+                        COLOUR_GREEN = np.array([0,255,0])
+                        green_circle = np.uint16(np.around(green_circle))
+                        for i in green_circle[0, :]:
+                            centre = (i[0], i[1])
+                            cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
+                            radius = i[2]
+                            cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
+                        self.green_circle_detected = True
 
-                if green_circle is not None:
-                    print("Circle detected")
-                    self.green_circle_detected = True
-                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_RED, 1)
-                # cv2.circle(<image>,(<center x>,<center y>),<radius>,<colour (rgb tuple)>,<thickness (defaults to 1)>)
-                # Then alter the values of any flags
         else:
             self.green_detected = False
 
         if len(contours_red) > 0:
             cred = max(contours_red, key = cv2.contourArea)
             M = cv2.moments(cred)
-
-            # M = cv2.moments(c)
-            # cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
-            # cxgreen, cygreen = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
-
-            #Check if the area of the shape you want is big enough to be considered
-            # If it is then change the flag for that colour to be True(1)
+            cxred, cyred = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
             if cv2.contourArea(cred) > 1000:
-
+                print(cv2.contourArea(cred))
                 self.red_detected = True
-                # draw a circle on the contour you're identifying as a blue object as well
-                #COLOUR_BLUE = np.array([0,0,255])
-                #COLOUR_GREEN = np.array([0,255,0])
-                #COLOUR_RED = np.array([255,0,0])
-                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_BLUE, 1)
-                #cv2.circle(cv_image,(cxgreen,cygreen), 25, COLOUR_GREEN, 1)
-                print("Red detected")
 
-                if red_circle is not None:
+                print("Red detected")
+                if red_circle is not None and cv2.contourArea(cred) > 8000:
                     print("Circle detected")
+                    COLOUR_GREEN = np.array([0,255,0])
+                    red_circle = np.uint16(np.around(red_circle))
+                    for i in red_circle[0, :]:
+                        centre = (i[0], i[1])
+                        cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
+                        radius = i[2]
+                        cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
                     self.red_circle_detected = True
                 #cv2.circle(cv_image,(cx,cy), 50, COLOUR_RED, 1)
                 # cv2.circle(<image>,(<center x>,<center y>),<radius>,<colour (rgb tuple)>,<thickness (defaults to 1)>)
