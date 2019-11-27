@@ -19,41 +19,11 @@ class colourIdentifier():
 
         self.message_pub = rospy.Publisher('messages', String, queue_size = 10)
         self.green_detected = False
+        self.green_circle_detected = False
         self.red_detected = False
+        self.red_circle_detected = False
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.callback)
-
-
-    def detect(self, c):
-
-        shape = "unidentified"
-        peri = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.04 * peri, True)
-        if len(approx) == 3:
-            shape = "triangle"
-        elif len(approx) == 4:
-            (x, y, w, h) = cv2.boundingRect(approx)
-            ar = w / float(h)
-            shape = "square" if ar >= 0.95 and ar <= 1.05 else "rectangle"
-        elif len(approx) == 5:
-            shape = "pentagon"
-        else:
-            shape = "circle"
-
-
-        return shape
-
-    def grab_contours(self, cnts):
-        if len(cnts) == 2:
-            cnts = cnts[0]
-        elif len(cnts) == 3:
-            cnts = cnts[1]
-        else:
-            raise Exception(("Contours tuple must have length 2 or 3, "
-            "otherwise OpenCV changed their cv2.findContours return "
-            "signature yet again. Refer to OpenCV's documentation "
-            "in that case"))
-        return cnts
 
 
 
@@ -69,18 +39,84 @@ class colourIdentifier():
             print(e)
         hsv_green_lower = np.array([40,10,10])
         hsv_green_upper = np.array([80,255,255])
+        hsv_red_lower = np.array([0,50,50])
+        hsv_red_upper = np.array([5,255,255])
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         image_mask_green = cv2.inRange(hsv,hsv_green_lower,hsv_green_upper)
-        image_res = cv2.bitwise_and(cv_image,cv_image, mask= image_mask_green)
-        green_threshold = cv2.threshold(image_mask_green, 127, 255,0)[1]
-        contours_green = cv2.findContours(green_threshold.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-        circles = cv2.HoughCircles(gray, cv.CV_HOUGH_GRADIENT, 1, 100)
-        if circles is not None:
-            print("Circle")
+        image_mask_red = cv2.inRange(hsv,hsv_red_lower,hsv_red_upper)
+        red_green_mask = cv2.bitwise_or(image_mask_red,image_mask_green)
+        image_res = cv2.bitwise_and(cv_image,cv_image, mask= red_green_mask)
+        contours_green, hierarchy = cv2.findContours(image_mask_green.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        contours_red, hierarchy = cv2.findContours(image_mask_red.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        green_circle = cv2.HoughCircles(image_mask_green, cv.CV_HOUGH_GRADIENT, 10, 300, param1 = 300, param2 = 200)
+        red_circle = cv2.HoughCircles(image_mask_red, cv.CV_HOUGH_GRADIENT, 10, 300, param1 = 300, param2 = 200)
 
-        cnts = self.grab_contours(contours_green)
+        width = np.size(image_res, 1)
+        centre = (width / 2)
+        if len(contours_green) > 0:
+            cgreen = max(contours_green, key = cv2.contourArea)
+            M = cv2.moments(cgreen)
+            cxgreen, cygreen = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
 
+            # M = cv2.moments(c)
+            # cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+            # cxgreen, cygreen = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+
+            #Check if the area of the shape you want is big enough to be considered
+            # If it is then change the flag for that colour to be True(1)
+            if cv2.contourArea(cgreen) > 1000:
+
+                self.green_detected = True
+                # draw a circle on the contour you're identifying as a blue object as well
+                COLOUR_GREEN = np.array([0,255,0])
+                #COLOUR_RED = np.array([255,0,0])
+                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_BLUE, 1)
+                cv2.circle(cv_image,(cxgreen,cygreen), 25, COLOUR_GREEN, 1)
+                #COLOUR_BLUE = np.array([0,0,255])
+                #COLOUR_GREEN = np.array([0,255,0])
+                #COLOUR_RED = np.array([255,0,0])
+                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_BLUE, 1)
+                #cv2.circle(cv_image,(cxgreen,cygreen), 25, COLOUR_GREEN, 1)
+                print("Green detected")
+
+                if green_circle is not None:
+                    print("Circle detected")
+                    self.green_circle_detected = True
+                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_RED, 1)
+                # cv2.circle(<image>,(<center x>,<center y>),<radius>,<colour (rgb tuple)>,<thickness (defaults to 1)>)
+                # Then alter the values of any flags
+        else:
+            self.green_detected = False
+
+        if len(contours_red) > 0:
+            cred = max(contours_red, key = cv2.contourArea)
+            M = cv2.moments(cred)
+
+            # M = cv2.moments(c)
+            # cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+            # cxgreen, cygreen = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+
+            #Check if the area of the shape you want is big enough to be considered
+            # If it is then change the flag for that colour to be True(1)
+            if cv2.contourArea(cred) > 1000:
+
+                self.red_detected = True
+                # draw a circle on the contour you're identifying as a blue object as well
+                #COLOUR_BLUE = np.array([0,0,255])
+                #COLOUR_GREEN = np.array([0,255,0])
+                #COLOUR_RED = np.array([255,0,0])
+                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_BLUE, 1)
+                #cv2.circle(cv_image,(cxgreen,cygreen), 25, COLOUR_GREEN, 1)
+                print("Red detected")
+
+                if red_circle is not None:
+                    print("Circle detected")
+                    self.red_circle_detected = True
+                #cv2.circle(cv_image,(cx,cy), 50, COLOUR_RED, 1)
+                # cv2.circle(<image>,(<center x>,<center y>),<radius>,<colour (rgb tuple)>,<thickness (defaults to 1)>)
+                # Then alter the values of any flags
+        else:
+            self.red_detected = False
 
 
 
