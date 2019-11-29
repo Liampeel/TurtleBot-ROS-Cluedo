@@ -27,7 +27,7 @@ class colourIdentifier():
         self.bridge = CvBridge()
         self.stop = False
         self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.callback)
-
+        self.detect = True
         while True:
             if(self.centralised and not self.green_circle_detected):
                 self.desired_velocity.linear.x = 0.1
@@ -38,7 +38,7 @@ class colourIdentifier():
 
                 #ADD CODE TO TAKE IMAGE CAPTURE
 
-                cv2.destroyAllWindows()
+                #cv2.destroyAllWindows()
 
                 break;
             if (not self.green_detected and not (self.green_circle_detected or self.centralised)):
@@ -49,6 +49,9 @@ class colourIdentifier():
 
 
     def callback(self, data):
+        if not self.detect:
+            return
+
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
 
@@ -105,6 +108,7 @@ class colourIdentifier():
                         cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
                         radius = i[2]
                         cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
+                    cv2.imwrite('green_circle.png', cv_image)
                     self.green_circle_detected = True
 
         else:
@@ -132,10 +136,10 @@ class colourIdentifier():
             self.red_detected = False
 
         #Display feeds
-        cv2.namedWindow('Camera_Feed')
-        cv2.imshow("Camera_Feed", cv_image)
-        cv2.imshow('res',image_res)
-        cv2.waitKey(1)
+        #cv2.namedWindow('Camera_Feed')
+        #cv2.imshow("Camera_Feed", cv_image)
+        #cv2.imshow('res',image_res)
+    #    cv2.waitKey(1)
 
 
 def main(args):

@@ -34,23 +34,24 @@ if __name__ == '__main__':
 
         if success:
             rospy.loginfo("Hooray, reached the desired pose")
-
             while True:
                 cI=colourIdentifier()
                 if cI.green_circle_detected:
                     rospy.loginfo("GREEN")
                     green = True
+                    cI.detect = False
                     break
                 elif cI.red_circle_detected:
                     rospy.loginfo("RED")
                     red = True
+                    cI.detect = False
                     break
             rospy.loginfo("DETECTED ONE")
         else:
             rospy.loginfo("The base failed to reach the desired pose")
 
         if green:
-            
+
             # Customize the following values so they are appropriate for your location
             x = room_1.get_centre("x")
             y = room_1.get_centre("y")
