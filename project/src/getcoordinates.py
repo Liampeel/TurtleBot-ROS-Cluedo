@@ -72,3 +72,25 @@ class GetCoordinates:
         :return: List containing the x,y coordinates for the specified room. Example x=1, y=3, return value: [1,3]
         """
         return self._get_points(room_number, "centre")
+
+
+def help():
+    print("<Usage> python getcoordinates.py <filepath to input_points.yaml>")
+
+
+if __name__ == '__main__':
+    import sys
+
+    # Check if caller supplied filepath arg
+    if len(sys.argv) > 1:
+        filepath = sys.argv[1]
+        coordinates = GetCoordinates(filepath)
+
+        print("[ROOM 1] Entrance=" + str(coordinates.get_room_entrance(1)))
+        print("[ROOM 1] Centre=" + str(coordinates.get_room_centre(1)))
+        print("[ROOM 2] Entrance=" + str(coordinates.get_room_entrance(2)))
+        print("[ROOM 2] Entrance=" + str(coordinates.get_room_centre(2)))
+    else:
+        help()
+        exit(-1)
+    exit(0)
