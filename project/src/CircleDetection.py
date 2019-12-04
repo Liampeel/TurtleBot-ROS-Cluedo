@@ -78,56 +78,65 @@ class colourIdentifier():
         #Find contours in the masks
         contours_green, hierarchy = cv2.findContours(image_mask_green.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         contours_red, hierarchy = cv2.findContours(image_mask_red.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-
+        grey = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+        grey = cv2.medianBlur(grey,9)
         #Use HoughCircles function to detect circles within the masked images.
         green_circle = cv2.HoughCircles(image_mask_green, cv.CV_HOUGH_GRADIENT, 80,100, param1 = 700, param2 = 600, minRadius = 1, maxRadius = 200)
         red_circle = cv2.HoughCircles(image_mask_red, cv.CV_HOUGH_GRADIENT, 100, 120, param1 = 150, param2 = 150)#, param1 = 500, param2 = 400, minRadius = 1, maxRadius = 200 )
 
-
+        circles = cv2.HoughCircles(grey, cv.CV_HOUGH_GRADIENT,1,20,param1 = 50, param2= 30,minRadius = 90,maxRadius = 110)
         width = np.size(image_res, 1)
         centre = (width / 2)
 
+
         #green circle detection
         if len(contours_green) > 0:
-            cgreen = max(contours_green, key = cv2.contourArea)
+            cgreen = 0
+            for cnts in contours_green:
+                contourArea = cv2.contourArea(cnts)
+                if contourArea > cgreen:
+                    cgreen = contourArea
             M = cv2.moments(cgreen)
             cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
-            if cv2.contourArea(cgreen) > 1000:
-                self.green_detected = True
-                if((cx < centre + 10) and (cx > centre -10 )):
-                    self.centralised = True;
+            #if cv2.contourArea(cgreen) > 1000:
+            self.green_detected = True
+            if((cx < centre + 10) and (cx > centre -10 )):
+                self.centralised = True;
 
-                if cv2.contourArea(cgreen) > 8000 and green_circle is not None:
-                    COLOUR_GREEN = np.array([0,255,0])
-                    green_circle = np.uint16(np.around(green_circle))
-                    for i in green_circle[0, :]:
-                        centre = (i[0], i[1])
-                        cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
-                        radius = i[2]
-                        cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
-                    self.green_circle_detected = True
+            if cgreen > 8000 and circles is not None:
+
+                COLOUR_GREEN = np.array([0,255,0])
+                circles = np.uint16(np.around(circles))
+                for i in circles[0, :]:
+                    centre = (i[0], i[1])
+                    cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
+                    radius = i[2]
+                    print i[2]
+                    cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
+                self.green_circle_detected = True
 
         else:
             self.green_detected = False
 
         #Red circle detection
+        #Red circle detection
         if len(contours_red) > 0:
-            cred = max(contours_red, key = cv2.contourArea)
-            M = cv2.moments(cred)
-            if cv2.contourArea(cred) > 1000:
-                print(cv2.contourArea(cred))
+            cred = 0
+            for cnts in contours_red:
+                contourArea = cv2.contourArea(cnts)
+                if contourArea > cred:
+                    cred = contourArea
+            if cred > 1000:
                 self.red_detected = True
-                print("Red detected")
-                if red_circle is not None and cv2.contourArea(cred) > 8000:
-                    print("Circle detected")
+                if circles is not None and cred > 8000:
                     COLOUR_GREEN = np.array([0,255,0])
-                    red_circle = np.uint16(np.around(red_circle))
-                    for i in red_circle[0, :]:
+                    circles = np.uint16(np.around(circles))
+                    for i in circles[0, :]:
                         centre = (i[0], i[1])
                         cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
                         radius = i[2]
                         cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
-                    self.red_circle_detected = True
+                    self.circles_detected = True
         else:
             self.red_detected = False
 
