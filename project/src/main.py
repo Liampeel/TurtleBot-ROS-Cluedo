@@ -5,6 +5,7 @@ import numpy as np
 from room import RoomOne, RoomTwo
 from go_to_specific_point_on_map import GoToPose
 from CircleDetection import colourIdentifier
+from cluedofinder import CluedoFinder
 
 def moveBasedOnRedOrGreen(green, red, navigator):
     if green:
@@ -101,8 +102,14 @@ if __name__ == '__main__':
                     break
             rospy.loginfo("DETECTED ONE")
 
-            moveBasedOnRedOrGreen(green,red, navigator)
+            successGreen = moveBasedOnRedOrGreen(green,red, navigator)
 
+        if(successGreen):
+            while True:
+                cF = CluedoFinder()
+                if cF.image_detected:
+                    rospy.loginfo("FOUND IMAGE")
+                    break
 
         # Sleep to give the last log messages time to be sent
         rospy.sleep(1)
