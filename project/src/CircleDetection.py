@@ -27,21 +27,16 @@ class colourIdentifier():
         self.bridge = CvBridge()
         self.stop = False
         self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.callback)
-
+        self.detect = True
         while True:
-            if(self.centralised and not self.green_circle_detected):
+            if(self.centralised and not (self.green_circle_detected or self.red_circle_detected)):
                 self.desired_velocity.linear.x = 0.1
                 self.desired_velocity.angular.z = 0
-            if(self.green_circle_detected):
+            if(self.green_circle_detected or self.red_circle_detected):
                 self.desired_velocity.linear.x = 0
                 self.desired_velocity.angular.z = 0
-
-                #ADD CODE TO TAKE IMAGE CAPTURE
-
-                cv2.destroyAllWindows()
-
                 break;
-            if (not self.green_detected and not (self.green_circle_detected or self.centralised)):
+            if (not (self.green_detected or self.red_detected) and not (self.green_circle_detected or self.red_circle_detected or self.centralised)):
                 self.desired_velocity.angular.z = 0.2
 
             self.pub.publish(self.desired_velocity)
@@ -49,12 +44,17 @@ class colourIdentifier():
 
 
     def callback(self, data):
+
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            if not self.detect:
+                return
 
 
         except CvBridgeError as e:
             print(e)
+        except AttributeError:
+            pass
 
         #Declare upper and lower bounds for red and green hsv values
         hsv_green_lower = np.array([40,10,10])
@@ -81,39 +81,37 @@ class colourIdentifier():
         grey = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
         grey = cv2.medianBlur(grey,9)
         #Use HoughCircles function to detect circles within the masked images.
-        green_circle = cv2.HoughCircles(image_mask_green, cv.CV_HOUGH_GRADIENT, 80,100, param1 = 700, param2 = 600, minRadius = 1, maxRadius = 200)
-        red_circle = cv2.HoughCircles(image_mask_red, cv.CV_HOUGH_GRADIENT, 100, 120, param1 = 150, param2 = 150)#, param1 = 500, param2 = 400, minRadius = 1, maxRadius = 200 )
-
         circles = cv2.HoughCircles(grey, cv.CV_HOUGH_GRADIENT,1,20,param1 = 50, param2= 30,minRadius = 90,maxRadius = 110)
         width = np.size(image_res, 1)
         centre = (width / 2)
 
 
+
+
         #green circle detection
         if len(contours_green) > 0:
-            cgreen = 0
-            for cnts in contours_green:
-                contourArea = cv2.contourArea(cnts)
-                if contourArea > cgreen:
-                    cgreen = contourArea
+
+            cgreen = max(contours_green, key = cv2.contourArea)
             M = cv2.moments(cgreen)
-            cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
-            #if cv2.contourArea(cgreen) > 1000:
-            self.green_detected = True
-            if((cx < centre + 10) and (cx > centre -10 )):
-                self.centralised = True;
+            try:
+                cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+            except ZeroDivisionError:
+                pass
+            if cv2.contourArea(cgreen) > 1000:
+                self.green_detected = True
+                if((cx < centre + 30) and (cx > centre -30 )):
+                    self.centralised = True;
 
-            if cgreen > 8000 and circles is not None:
-
-                COLOUR_GREEN = np.array([0,255,0])
-                circles = np.uint16(np.around(circles))
-                for i in circles[0, :]:
-                    centre = (i[0], i[1])
-                    cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
-                    radius = i[2]
-                    print i[2]
+                if cv2.contourArea(cgreen) > 8000 and circles is not None:
+                    COLOUR_GREEN = np.array([0,255,0])
+                    circles = np.uint16(np.around(circles))
+                    for i in circles[0, :]:
+                        centre = (i[0], i[1])
+                        cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
+                        radius = i[2]
                     cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
-                self.green_circle_detected = True
+                    cv2.imwrite('green_circle.png', cv_image)
+                    self.green_circle_detected = True
 
         else:
             self.green_detected = False
@@ -121,30 +119,37 @@ class colourIdentifier():
         #Red circle detection
         #Red circle detection
         if len(contours_red) > 0:
-            cred = 0
-            for cnts in contours_red:
-                contourArea = cv2.contourArea(cnts)
-                if contourArea > cred:
-                    cred = contourArea
-            if cred > 1000:
+            cred = max(contours_red, key = cv2.contourArea)
+            M = cv2.moments(cred)
+            try:
+                cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+            except ZeroDivisionError:
+                pass
+
+            if cv2.contourArea(cred) > 1000:
                 self.red_detected = True
-                if circles is not None and cred > 8000:
+                if((cx < centre + 30) and (cx > centre -30 )):
+                    self.centralised = True;
+
+                if circles is not None and cv2.contourArea(cred) > 8000:
                     COLOUR_GREEN = np.array([0,255,0])
                     circles = np.uint16(np.around(circles))
                     for i in circles[0, :]:
                         centre = (i[0], i[1])
                         cv2.circle(cv_image, centre, 1, COLOUR_GREEN,3)
                         radius = i[2]
-                        cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
-                    self.circles_detected = True
+                    cv2.circle(cv_image,centre,radius,COLOUR_GREEN,3)
+                    self.red_circle_detected = True
         else:
             self.red_detected = False
 
+
+
         #Display feeds
-        cv2.namedWindow('Camera_Feed')
-        cv2.imshow("Camera_Feed", cv_image)
-        cv2.imshow('res',image_res)
-        cv2.waitKey(1)
+        #cv2.namedWindow('Camera_Feed')
+        #cv2.imshow("Camera_Feed", cv_image)
+        #cv2.imshow('res',image_res)
+    #    cv2.waitKey(1)
 
 
 def main(args):
