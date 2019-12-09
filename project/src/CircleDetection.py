@@ -16,7 +16,6 @@ from std_msgs.msg import String
 class colourIdentifier():
 
     def __init__(self):
-
         self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist)
         self.desired_velocity = Twist()
         self.green_detected = False
@@ -44,12 +43,10 @@ class colourIdentifier():
 
 
     def callback(self, data):
-
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
             if not self.detect:
                 return
-
 
         except CvBridgeError as e:
             print(e)
@@ -61,7 +58,6 @@ class colourIdentifier():
         hsv_green_upper = np.array([80,255,255])
         hsv_red_lower = np.array([0,50,50])
         hsv_red_upper = np.array([5,255,255])
-
 
         hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
@@ -85,12 +81,8 @@ class colourIdentifier():
         width = np.size(image_res, 1)
         centre = (width / 2)
 
-
-
-
         #green circle detection
         if len(contours_green) > 0:
-
             cgreen = max(contours_green, key = cv2.contourArea)
             M = cv2.moments(cgreen)
             try:
@@ -143,14 +135,6 @@ class colourIdentifier():
             self.red_detected = False
 
 
-
-        #Display feeds
-        #cv2.namedWindow('Camera_Feed')
-        #cv2.imshow("Camera_Feed", cv_image)
-        #cv2.imshow('res',image_res)
-    #    cv2.waitKey(1)
-
-
 def main(args):
     rospy.init_node("colourIdentifier", anonymous=True)
     cI = colourIdentifier()
@@ -164,3 +148,4 @@ def main(args):
 
 if __name__ == "__main__":
     main(sys.argv)
+
