@@ -15,25 +15,26 @@ from std_msgs.msg import String
 class CluedoFinder:
 
     MIN_CONTOUR_AREA = 750
-
+    CLOSE_ENOUGH_AREA = 15000
     def __init__(self):
         self.cv_bridge = CvBridge()
         self.subscriber = rospy.Subscriber('camera/rgb/image_raw', Image, self.callback)
-        #self.centralised = False
+        self.centralised = False
         self.image_detected = False
+        self.image_close_enough = False
         self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist)
         self.desired_velocity = Twist()
         while True:
-            #if(self.centralised and not self.image_detected):
-                #self.desired_velocity.linear.x = 0.1
-                #self.desired_velocity.angular.z = 0
-            if(self.image_detected):
+            if(self.centralised and self.image_detected and not self.image_close_enough):
+                self.desired_velocity.linear.x = 0.1
+                self.desired_velocity.angular.z = 0
+            if(self.image_close_enough):
                 self.desired_velocity.linear.x = 0
                 self.desired_velocity.angular.z = 0
                 break;
-            if (not self.image_detected):
-                self.desired_velocity.angular.z = 0.2
-
+            if (not self.image_detected or not self.centralised):
+                self.desired_velocity.angular.z = 0.1
+                self.desired_velocity.linear.x = 0
             self.pub.publish(self.desired_velocity)
 
     def callback(self, data):
@@ -54,12 +55,26 @@ class CluedoFinder:
                 if self.is_four_sided(cnt):
                     # Check if the contour area is big enough to be the cluedo character
                     area = cv2.contourArea(cnt)
-                    if area > self.MIN_CONTOUR_AREA:
+                    if area > self.CLOSE_ENOUGH_AREA:
+                        self.image_close_enough = True
+                    elif area > self.MIN_CONTOUR_AREA:
                         cv2.drawContours(camera_image, [cnt], 0, (0, 0, 255), -1)
+                        M = cv2.moments(cnt)
+                        cx =0
+                        cy =0
+                        try:
+                            cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
+                        except ZeroDivisionError:
+                            pass
+                        if((cx < centre + 10) and (cx > centre -10 )):
+                            self.centralised = True;
+                        else :
+                            self.centralised = False;
+
                         self.image_detected = True
-            cv2.namedWindow("Camera_Feed")
-            cv2.imshow("Camera_Feed", camera_image)
-            cv2.waitKey(1)
+            # cv2.namedWindow("Camera_Feed")
+            # cv2.imshow("Camera_Feed", camera_image)
+            # cv2.waitKey(1)
         except CvBridgeError as cv_err:
             rospy.loginfo(rospy.get_caller_id + " Error: " + str(cv_err))
 
