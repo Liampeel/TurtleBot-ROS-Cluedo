@@ -5,7 +5,6 @@ import cv2.cv as cv
 import numpy as np
 import rospy
 import sys
-import argparse
 from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
@@ -16,6 +15,7 @@ class CluedoFinder:
 
     MIN_CONTOUR_AREA = 750
     CLOSE_ENOUGH_AREA = 30000
+
     def __init__(self):
         self.cv_bridge = CvBridge()
         self.subscriber = rospy.Subscriber('camera/rgb/image_raw', Image, self.callback)
