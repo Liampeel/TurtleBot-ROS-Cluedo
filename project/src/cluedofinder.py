@@ -15,7 +15,7 @@ from std_msgs.msg import String
 class CluedoFinder:
 
     MIN_CONTOUR_AREA = 750
-    CLOSE_ENOUGH_AREA = 15000
+    CLOSE_ENOUGH_AREA = 30000
     def __init__(self):
         self.cv_bridge = CvBridge()
         self.subscriber = rospy.Subscriber('camera/rgb/image_raw', Image, self.callback)
@@ -24,17 +24,27 @@ class CluedoFinder:
         self.image_close_enough = False
         self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist)
         self.desired_velocity = Twist()
+        self.cv_image = None
+        self.anticlockwise = False
         while True:
-            if(self.centralised and self.image_detected and not self.image_close_enough):
-                self.desired_velocity.linear.x = 0.1
-                self.desired_velocity.angular.z = 0
             if(self.image_close_enough):
                 self.desired_velocity.linear.x = 0
                 self.desired_velocity.angular.z = 0
                 break;
+
+            if(self.centralised and self.image_detected and not self.image_close_enough):
+                self.desired_velocity.linear.x = 0.1
+                self.desired_velocity.angular.z = 0
+
+
             if (not self.image_detected or not self.centralised):
-                self.desired_velocity.angular.z = 0.1
+                if(self.anticlockwise):
+                    self.desired_velocity.angular.z = -0.2
+                else:
+                    self.desired_velocity.angular.z = 0.2
                 self.desired_velocity.linear.x = 0
+
+
             self.pub.publish(self.desired_velocity)
 
     def callback(self, data):
@@ -57,6 +67,7 @@ class CluedoFinder:
                     area = cv2.contourArea(cnt)
                     if area > self.CLOSE_ENOUGH_AREA:
                         self.image_close_enough = True
+                        self.cv_image = camera_image
                     elif area > self.MIN_CONTOUR_AREA:
                         cv2.drawContours(camera_image, [cnt], 0, (0, 0, 255), -1)
                         M = cv2.moments(cnt)
@@ -68,7 +79,12 @@ class CluedoFinder:
                             pass
                         if((cx < centre + 10) and (cx > centre -10 )):
                             self.centralised = True;
-                        else :
+                        elif(cx > centre + 10):
+                            self.anticlockwise = True;
+                            self.centralised = False;
+
+                        elif(cx < centre - 10):
+                            self.anticlockwise = False;
                             self.centralised = False;
 
                         self.image_detected = True
