@@ -26,27 +26,16 @@ from __future__ import division
 import common
 from common import getsize, draw_keypoints
 from plane_tracker import PlaneTracker
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
 
 import cv2
-import cv2.cv as cv
 import numpy as np
 import rospy
 import sys
 import os
 
-#from matplotlib import pyplot as plt
-
-
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
-
 
 class characterDetection:
     def __init__(self):
-
-        self.bridge = CvBridge()
         self.template = None
         self.paused = False
         self.recognised = False
@@ -75,28 +64,19 @@ class characterDetection:
             w, h = getsize(self.frame)
             vis = np.zeros((h, w, 3), np.uint8)
 
-
             vis[:h,:w] = self.frame
 
             tracked = self.tracker.track(self.frame)
-            #if self.recognised == False:
             if len(tracked) > 0:
-                    rospy.loginfo("3")
+                rospy.loginfo("3")
+                for tracked_ob in tracked:
+                    rospy.loginfo ('Found ' + tracked_ob.target.data)
+                    self.character = tracked_ob.target.data
+                        
+                    # Calculate Homography
+                    h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
+                    self.recognised = True
 
-                    for tracked_ob in tracked:
-
-                        print ('Found ' + tracked_ob.target.data)
-                        self.character = tracked_ob.target.data
-                        # Calculate Homography
-                        h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
-                        self.recognised = True
-                    #    cv2.imshow('vis', vis)
-
-
-
-
-    #    cv2.imshow('plane', cv_image)
-    #    cv2.waitKey(1)
 
 def main(args):
     rospy.init_node("characterDetection", anonymous=True)
@@ -108,7 +88,7 @@ def main(args):
         cv2.destroyAllWindows()
 
 
-
 # Check if the node is executing in the main path
 if __name__ == '__main__':
     main(sys.argv)
+
