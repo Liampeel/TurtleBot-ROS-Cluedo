@@ -88,7 +88,7 @@ class PlaneTracker:
 
     def track(self, frame):
         '''Returns a list of detected TrackedTarget objects'''
-        print("RUNNING TRACKING...")
+        #print("RUNNING TRACKING...")
         self.frame_points, frame_descrs = self.detect_features(frame)
         if len(self.frame_points) < MIN_MATCH_COUNT:
             return []

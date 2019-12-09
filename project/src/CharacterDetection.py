@@ -29,9 +29,8 @@ from plane_tracker import PlaneTracker
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-
-
 import cv2
+import cv2.cv as cv
 import numpy as np
 import rospy
 import sys
@@ -48,11 +47,11 @@ class characterDetection:
     def __init__(self):
 
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.callback)
         self.template = None
         self.paused = False
         self.recognised = False
         self.tracker = PlaneTracker()
+        self.character = ""
 
 		#Add template images to tracker
         scarlet = cv2.imread(os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'cluedo_images/scarlet.png')))
@@ -70,25 +69,9 @@ class characterDetection:
         self.tracker.add_target(plum.copy(), plum_rect,'plum')
         self.tracker.add_target(peacock.copy(), peacock_rect,'peacock')
 
-
-
-        cv2.namedWindow('plane')
-
-        self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.callback)
-
-    def callback(self, data):
-        try:
-            cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-
-
-        except CvBridgeError as e:
-            print(e)
-
-
-        if self.recognised == False:
+    def checkPoster(self, cv_image):
+        if not self.recognised:
             self.frame = cv_image.copy()
-
             w, h = getsize(self.frame)
             vis = np.zeros((h, w, 3), np.uint8)
 
@@ -98,20 +81,22 @@ class characterDetection:
             tracked = self.tracker.track(self.frame)
             #if self.recognised == False:
             if len(tracked) > 0:
+                    rospy.loginfo("3")
 
                     for tracked_ob in tracked:
 
                         print ('Found ' + tracked_ob.target.data)
+                        self.character = tracked_ob.target.data
                         # Calculate Homography
                         h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
                         self.recognised = True
-                        cv2.imshow('vis', vis)
+                    #    cv2.imshow('vis', vis)
 
 
 
 
-        cv2.imshow('plane', cv_image)
-        cv2.waitKey(1)
+    #    cv2.imshow('plane', cv_image)
+    #    cv2.waitKey(1)
 
 def main(args):
     rospy.init_node("characterDetection", anonymous=True)

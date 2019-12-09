@@ -6,6 +6,8 @@ from room import RoomOne, RoomTwo
 from go_to_specific_point_on_map import GoToPose
 from CircleDetection import colourIdentifier
 from cluedofinder import CluedoFinder
+from CharacterDetection import characterDetection
+import cv2
 
 def moveBasedOnRedOrGreen(green, red, navigator):
     if green:
@@ -84,8 +86,8 @@ if __name__ == '__main__':
         else:
             rospy.loginfo("The base failed to reach the desired pose")
 
-        success = moveBasedOnRedOrGreen(green, red, navigator)
-        if(red and success):
+        success2 = moveBasedOnRedOrGreen(green, red, navigator)
+        if(red and success2):
             red = False
             green = False
             while True:
@@ -104,15 +106,27 @@ if __name__ == '__main__':
 
             successGreen = moveBasedOnRedOrGreen(green,red, navigator)
 
-        if(green and success):
+        if(green and success2):
             successGreen = True
-            
+
         if(successGreen):
             while True:
                 cF = CluedoFinder()
-                if cF.image_detected:
+                if cF.image_close_enough:
                     rospy.loginfo("FOUND IMAGE")
-                    break
+                    break;
+
+            while True:
+                cd = characterDetection()
+                cd.checkPoster(cF.cv_image)
+                if cd.recognised:
+                    cv2.imwrite('cluedo_character.png', cF.cv_image)
+                    with open('cluedo_character.txt', "w") as textFile:
+                        textFile.write(cd.character)
+                    rospy.loginfo("DETECTED CLUEDO CHARACTER")
+                    break;
+
+        rospy.loginfo(cd.character)
 
         # Sleep to give the last log messages time to be sent
         rospy.sleep(1)

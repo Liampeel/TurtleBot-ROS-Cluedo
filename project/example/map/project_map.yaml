@@ -1,4 +1,4 @@
-image: /home/csunix/sc16lep/modules/robotics/catkin_ws/src/group_project/project/example/map/project_map.pgm
+image: /home/csunix/sc16km/catkin_ws/src/group_project/project/example/map/project_map.pgm
 resolution: 0.050000
 origin: [-15.400000, -13.800000, 0.000000]
 negate: 0
