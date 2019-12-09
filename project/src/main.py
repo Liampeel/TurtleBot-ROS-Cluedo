@@ -5,6 +5,7 @@ import numpy as np
 from room import RoomOne, RoomTwo
 from go_to_specific_point_on_map import GoToPose
 from CircleDetection import colourIdentifier
+from cluedofinder import CluedoFinder
 
 def moveBasedOnRedOrGreen(green, red, navigator):
     if green:
@@ -28,8 +29,8 @@ def moveBasedOnRedOrGreen(green, red, navigator):
         navigator = GoToPose()
 
         # Customize the following values so they are appropriate for your location
-        x = room_1.get_entrance("x")
-        y = room_1.get_entrance("y")
+        x = room_2.get_entrance("x")
+        y = room_2.get_entrance("y")
         theta = 0  # This is for rotation
         position = {'x': x, 'y': y}
         quaternion = {'r1': 0.000, 'r2': 0.000, 'r3': np.sin(theta/2.0), 'r4': np.cos(theta/2.0)}
@@ -55,8 +56,8 @@ if __name__ == '__main__':
         navigator = GoToPose()
 
         # Customize the following values so they are appropriate for your location
-        x = room_2.get_entrance("x")
-        y = room_2.get_entrance("y")
+        x = room_1.get_entrance("x")
+        y = room_1.get_entrance("y")
         theta = 0  # This is for rotation
         position = {'x': x, 'y': y}
         quaternion = {'r1': 0.000, 'r2': 0.000, 'r3': np.sin(theta/2.0), 'r4': np.cos(theta/2.0)}
@@ -101,8 +102,17 @@ if __name__ == '__main__':
                     break
             rospy.loginfo("DETECTED ONE")
 
-            moveBasedOnRedOrGreen(green,red, navigator)
+            successGreen = moveBasedOnRedOrGreen(green,red, navigator)
 
+        if(green and success):
+            successGreen = True
+            
+        if(successGreen):
+            while True:
+                cF = CluedoFinder()
+                if cF.image_detected:
+                    rospy.loginfo("FOUND IMAGE")
+                    break
 
         # Sleep to give the last log messages time to be sent
         rospy.sleep(1)
