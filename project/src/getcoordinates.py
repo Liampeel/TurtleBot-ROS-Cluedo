@@ -17,18 +17,29 @@ class GetCoordinates:
         """
         filepath = path.expanduser(filepath)  # just in case the caller gave relative path.
         if not path.exists(filepath):
-            raise EnvironmentError(filepath + " not found")
+            print("[ERROR]: '" + filepath + "' not found")
+            exit(-1)
+        else:
+            # Check that we're getting a yaml file
+            if not filepath.split("/")[-1].split(".")[-1] == "yaml":
+                print("[ERROR]: '" + filepath + "' not a YAML file")
+                exit(-1)
 
         self._filepath = filepath
         self._rooms = self._parse()
 
     def _parse(self):
         parsed = None
-        with open(self._filepath, 'r') as fp:
-            try:
+        try:
+            with open(self._filepath, 'r') as fp:
                 parsed = yaml.safe_load(fp)
-            except (yaml.YAMLError, KeyError), err:
-                raise KeyError("YAML parsing failed: " + str(err))
+        except KeyError as key_err:
+            print("[ERROR]: YAML parsing failed: " + str(key_err))
+            exit(-1)
+        except IOError as io_err:
+            # If they've given a directory
+            print("[ERROR] IO Error: is this path correct? Make sure it's not a directory. " + str(io_err))
+            exit(-1)
         return parsed
 
     def _get_points(self, room_number, points_location):
