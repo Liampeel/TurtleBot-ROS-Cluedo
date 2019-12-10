@@ -19,7 +19,7 @@ class CluedoFinder:
         self.centralised = False
         self.image_detected = False
         self.image_close_enough = False
-        self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist)
+        self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size=1)
         self.desired_velocity = Twist()
         self.cv_image = None
         self.anticlockwise = False
@@ -48,7 +48,8 @@ class CluedoFinder:
                             self.cv_image = camera_image
                         elif area > self.MIN_CONTOUR_AREA:
                             self.image_detected = True
-            
+
+
         except CvBridgeError as cv_err:
             rospy.loginfo(rospy.get_caller_id + " Error: " + str(cv_err))
 
