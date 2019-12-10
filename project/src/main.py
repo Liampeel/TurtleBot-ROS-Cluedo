@@ -9,7 +9,9 @@ from cluedofinder import CluedoFinder
 from CharacterDetection import characterDetection
 import cv2
 
+
 def moveBasedOnRedOrGreen(green, red, navigator):
+    success = False
     if green:
 
         # Customize the following values so they are appropriate for your location
@@ -57,6 +59,10 @@ if __name__ == '__main__':
     green = False
     red = False
 
+    success = False
+    successGreen = False
+    successMove = False
+
     try:
         rospy.init_node('move_to_point', anonymous=True)
         navigator = GoToPose()
@@ -71,69 +77,80 @@ if __name__ == '__main__':
         rospy.loginfo("Go to (%s, %s) pose", position['x'], position['y'])
         success = navigator.goto(position, quaternion)
 
-
         if success:
             rospy.loginfo("Hooray, reached the desired pose")
-            while True:
-                cI=colourIdentifier()
-                if cI.green_circle_detected:
-                    rospy.loginfo("GREEN")
-                    green = True
-                    cI.detect = False
-                    break
-                elif cI.red_circle_detected:
-                    rospy.loginfo("RED")
-                    red = True
-                    cI.detect = False
-                    break
+            try:
+                while True:
+                    cI=colourIdentifier()
+                    if cI.green_circle_detected:
+                        rospy.loginfo("GREEN")
+                        green = True
+                        cI.detect = False
+                        break
+                    elif cI.red_circle_detected:
+                        rospy.loginfo("RED")
+                        red = True
+                        cI.detect = False
+                        break
+            except KeyboardInterrupt:
+                exit(-1)
             rospy.loginfo("DETECTED ONE")
         else:
             rospy.loginfo("The base failed to reach the desired pose")
 
-        success2 = moveBasedOnRedOrGreen(green, red, navigator)
-        if(red and success2):
+        successMove = moveBasedOnRedOrGreen(green, red, navigator)
+        if(red and successMove):
             red = False
             green = False
-            while True:
-                cI=colourIdentifier()
-                if cI.green_circle_detected:
-                    rospy.loginfo("GREEN")
-                    green = True
-                    cI.detect = False
-                    break
-                elif cI.red_circle_detected:
-                    rospy.loginfo("RED")
-                    red = True
-                    cI.detect = False
-                    break
+            try:
+                while True:
+                    cI=colourIdentifier()
+                    if cI.green_circle_detected:
+                        rospy.loginfo("GREEN")
+                        green = True
+                        cI.detect = False
+                        break
+                    elif cI.red_circle_detected:
+                        rospy.loginfo("RED")
+                        red = True
+                        cI.detect = False
+                        break
+            except KeyboardInterrupt:
+                exit(-1)
             rospy.loginfo("DETECTED ONE")
 
             successGreen = moveBasedOnRedOrGreen(green,red, navigator)
 
-        if(green and success2):
+        if(green and successMove):
             successGreen = True
 
         if(successGreen):
-            while True:
-                cF = CluedoFinder()
-                if cF.image_close_enough:
-                    rospy.loginfo("FOUND IMAGE")
-                    break;
+            try:
+                while True:
+                    cF = CluedoFinder()
+                    if cF.image_close_enough:
+                        rospy.loginfo("FOUND IMAGE")
+                        break
 
-            while True:
-                cd = characterDetection()
-                cd.checkPoster(cF.cv_image)
-                if cd.recognised:
-                    cv2.imwrite('cluedo_character.png', cF.cv_image)
-                    with open('cluedo_character.txt', "w") as textFile:
-                        textFile.write(cd.character)
-                    rospy.loginfo("DETECTED CLUEDO CHARACTER")
-                    break;
-
-        rospy.loginfo(cd.character)
+                while True:
+                    cd = characterDetection()
+                    cd.checkPoster(cF.cv_image)
+                    if cd.recognised:
+                        cv2.imwrite('cluedo_character.png', cF.cv_image)
+                        with open('cluedo_character.txt', "w") as textFile:
+                            textFile.write(cd.character)
+                        rospy.loginfo("DETECTED CLUEDO CHARACTER")
+                        break
+            except KeyboardInterrupt:
+                exit(-1)
 
         # Sleep to give the last log messages time to be sent
         rospy.sleep(1)
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Ctrl-C caught. Quitting")
+        exit(0)
+
+    except KeyboardInterrupt:
+        rospy.loginfo("Keyoard interrupt.")
+        exit(0)

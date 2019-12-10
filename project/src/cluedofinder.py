@@ -1,14 +1,11 @@
 #! /usr/bin/env python
 
 import cv2
-import cv2.cv as cv
 import numpy as np
 import rospy
-import sys
 from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-from std_msgs.msg import String
 
 
 class CluedoFinder:
@@ -27,24 +24,19 @@ class CluedoFinder:
         self.cv_image = None
         self.anticlockwise = False
         while True:
-            if(self.image_close_enough):
+            if self.image_close_enough:
                 self.desired_velocity.linear.x = 0
                 self.desired_velocity.angular.z = 0
-                break;
-
-            if(self.centralised and self.image_detected and not self.image_close_enough):
+                break
+            if self.centralised and self.image_detected and not self.image_close_enough:
                 self.desired_velocity.linear.x = 0.1
                 self.desired_velocity.angular.z = 0
-
-
-            if (not self.image_detected or not self.centralised):
-                if(self.anticlockwise):
+            if not self.image_detected or not self.centralised:
+                if self.anticlockwise:
                     self.desired_velocity.angular.z = -0.2
                 else:
                     self.desired_velocity.angular.z = 0.2
                 self.desired_velocity.linear.x = 0
-
-
             self.pub.publish(self.desired_velocity)
 
     def callback(self, data):
@@ -77,20 +69,16 @@ class CluedoFinder:
                             cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
                         except ZeroDivisionError:
                             pass
-                        if((cx < centre + 10) and (cx > centre -10 )):
-                            self.centralised = True;
-                        elif(cx > centre + 10):
-                            self.anticlockwise = True;
-                            self.centralised = False;
-
-                        elif(cx < centre - 10):
-                            self.anticlockwise = False;
-                            self.centralised = False;
+                        if(cx < centre + 10) and (cx > centre -10):
+                            self.centralised = True
+                        elif cx > centre + 10:
+                            self.anticlockwise = True
+                            self.centralised = False
+                        elif cx < centre - 10:
+                            self.anticlockwise = False
+                            self.centralised = False
 
                         self.image_detected = True
-            # cv2.namedWindow("Camera_Feed")
-            # cv2.imshow("Camera_Feed", camera_image)
-            # cv2.waitKey(1)
         except CvBridgeError as cv_err:
             rospy.loginfo(rospy.get_caller_id + " Error: " + str(cv_err))
 
