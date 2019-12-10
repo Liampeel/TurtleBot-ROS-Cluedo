@@ -19,11 +19,16 @@ class CluedoFinder:
         self.centralised = False
         self.image_detected = False
         self.image_close_enough = False
-        self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist)
+        self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size=1)
         self.desired_velocity = Twist()
         self.cv_image = None
         self.anticlockwise = False
+        self.rate = rospy.Rate(10)
+        self.desired_velocity.linear.x = 0
+        self.desired_velocity.angular.z = 0
+
         while True:
+            self.navigate_room()
             if self.image_close_enough:
                 self.desired_velocity.linear.x = 0
                 self.desired_velocity.angular.z = 0
@@ -37,7 +42,12 @@ class CluedoFinder:
                 else:
                     self.desired_velocity.angular.z = 0.2
                 self.desired_velocity.linear.x = 0
-            self.pub.publish(self.desired_velocity)
+
+    def navigate_room(self, square_size):
+        self.desired_velocity.linear.x = 1.0
+        self.desired_velocity.angular.z = 1.0
+        self.pub.publish(self.desired_velocity)
+        self.rate.sleep()
 
     def callback(self, data):
         try:
@@ -47,13 +57,11 @@ class CluedoFinder:
             # Process the image and get the contours
             pre_processed_img = self.pre_process(camera_image)
             contours, h = cv2.findContours(pre_processed_img, 1, 2)
-
             width = np.size(pre_processed_img, 1)
             centre = (width / 2)
 
             # Iterate over the contours and find any that have 4 sides
             for cnt in contours:
-
                 if self.is_four_sided(cnt):
                     # Check if the contour area is big enough to be the cluedo character
                     area = cv2.contourArea(cnt)
@@ -63,8 +71,8 @@ class CluedoFinder:
                     elif area > self.MIN_CONTOUR_AREA:
                         cv2.drawContours(camera_image, [cnt], 0, (0, 0, 255), -1)
                         M = cv2.moments(cnt)
-                        cx =0
-                        cy =0
+                        cx = 0
+                        cy = 0
                         try:
                             cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
                         except ZeroDivisionError:
