@@ -1,0 +1,11 @@
+# IDE stuff
+.idea
+
+# Screen grabs
+green_circle.png
+cluedo_character.png
+cluedo_character.txt
+
+# Pycache
+*.pyc
+*/__pycache__
