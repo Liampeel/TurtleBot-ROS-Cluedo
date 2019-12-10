@@ -42,12 +42,16 @@ def moveBasedOnRedOrGreen(green, red, navigator):
 
     return success
 
+
 if __name__ == '__main__':
 
-    # TODO: We might be better off getting the user to specify where the input_points.yaml file is.
+    import sys
 
-    # Get all the coordinates for room 1 & 2
-    INPUT_POINTS_PATH = "../example/input_points.yaml"
+    if len(sys.argv) < 2:
+        print("<Usage> python main.py path_to_input_points.yaml")
+        exit(1)
+
+    INPUT_POINTS_PATH = sys.argv[1]
     room_1 = RoomOne(INPUT_POINTS_PATH)
     room_2 = RoomTwo(INPUT_POINTS_PATH)
     green = False
