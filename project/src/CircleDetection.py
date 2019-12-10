@@ -27,19 +27,26 @@ class colourIdentifier():
         self.stop = False
         self.image_sub = rospy.Subscriber("camera/rgb/image_raw", Image, self.callback)
         self.detect = True
-        while True:
-            if(self.centralised and not (self.green_circle_detected or self.red_circle_detected)):
-                self.desired_velocity.linear.x = 0.1
-                self.desired_velocity.angular.z = 0
-            if(self.green_circle_detected or self.red_circle_detected):
-                self.desired_velocity.linear.x = 0
-                self.desired_velocity.angular.z = 0
-                break;
-            if (not (self.green_detected or self.red_detected) and not (self.green_circle_detected or self.red_circle_detected or self.centralised)):
-                self.desired_velocity.angular.z = 0.2
+        try:
 
-            self.pub.publish(self.desired_velocity)
+            while True:
+                if(self.centralised and not (self.green_circle_detected or self.red_circle_detected)):
+                    self.desired_velocity.linear.x = 0.1
+                    self.desired_velocity.angular.z = 0
 
+                if(self.green_circle_detected or self.red_circle_detected):
+                    self.desired_velocity.linear.x = 0
+                    self.desired_velocity.angular.z = 0
+                    break;
+                if (not (self.green_detected or self.red_detected) and not (self.green_circle_detected or self.red_circle_detected or self.centralised)):
+                    self.desired_velocity.angular.z = 0.2
+
+                self.pub.publish(self.desired_velocity)
+        except KeyboardInterrupt:
+            print("here")
+            raise
+        except rospy.ROSInterruptException:
+            raise
 
 
     def callback(self, data):
@@ -50,8 +57,8 @@ class colourIdentifier():
 
         except CvBridgeError as e:
             print(e)
-        except AttributeError:
-            pass
+        except AttributeError as error:
+            print(error)
 
         #Declare upper and lower bounds for red and green hsv values
         hsv_green_lower = np.array([40,10,10])
@@ -121,6 +128,9 @@ class colourIdentifier():
                 self.red_detected = True
                 if((cx < centre + 30) and (cx > centre -30 )):
                     self.centralised = True;
+                    rospy.loginfo(self.centralised)
+                    rospy.loginfo(cx)
+                    rospy.loginfo(centre)
 
                 if circles is not None and cv2.contourArea(cred) > 8000:
                     COLOUR_GREEN = np.array([0,255,0])
@@ -148,4 +158,3 @@ def main(args):
 
 if __name__ == "__main__":
     main(sys.argv)
-

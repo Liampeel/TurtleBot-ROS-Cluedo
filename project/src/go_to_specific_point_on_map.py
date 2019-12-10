@@ -76,6 +76,7 @@ class GoToPose:
         rospy.loginfo("Stop")
         rospy.sleep(1)
 
+        #raise KeyboardInterrupt
 
 if __name__ == '__main__':
     try:
@@ -102,4 +103,3 @@ if __name__ == '__main__':
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Ctrl-C caught. Quitting")
-

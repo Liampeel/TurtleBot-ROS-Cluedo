@@ -25,7 +25,7 @@
           <max_contacts>10</max_contacts>
         </collision>
         <visual name='visual'>
-          <pose>1.18 0 0.4 1.57 5.55112e-17 -1.57</pose>
+          <pose>1.18 3.5 0.4 1.57 5.55112e-17 -1.57</pose>
           <cast_shadows>0</cast_shadows>
           <geometry>
             <plane>
