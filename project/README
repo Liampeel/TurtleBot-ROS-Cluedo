@@ -1,1 +1,9 @@
-# This file should contains all the instructions to run the automated navigation.
+# Setup Instructions
+
+TODO: Do we need these? The announcement specifies how they will set up the environment for the demo
+
+# Running the automated world navigation scripts
+
+python main.py path_to_input_points.yaml_file
+
+Note that this path can be a relative path.
