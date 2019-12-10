@@ -16,7 +16,7 @@ from std_msgs.msg import String
 class colourIdentifier():
 
     def __init__(self):
-        self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist)
+        self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size=1)
         self.desired_velocity = Twist()
         self.green_detected = False
         self.green_circle_detected = False
