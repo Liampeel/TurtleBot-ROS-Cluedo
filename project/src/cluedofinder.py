@@ -6,12 +6,11 @@ import rospy
 from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-
+MIN_CONTOUR_AREA = 3000
+CLOSE_ENOUGH_AREA = 20000
 
 class CluedoFinder:
 
-    MIN_CONTOUR_AREA = 750
-    CLOSE_ENOUGH_AREA = 30000
 
     def __init__(self):
         self.cv_bridge = CvBridge()
@@ -21,7 +20,7 @@ class CluedoFinder:
         self.image_close_enough = False
         self.pub = rospy.Publisher('mobile_base/commands/velocity', Twist, queue_size=1)
         self.desired_velocity = Twist()
-        self.cv_image = None
+        #self.cv_image = None
         self.anticlockwise = False
 
 
@@ -43,11 +42,12 @@ class CluedoFinder:
 
                         # Check if the contour area is big enough to be the cluedo character
                         area = cv2.contourArea(cnt)
-                        if area > self.CLOSE_ENOUGH_AREA:
+                        if area > CLOSE_ENOUGH_AREA:
                             self.image_close_enough = True
-                            self.cv_image = camera_image
-                        elif area > self.MIN_CONTOUR_AREA:
+                            #self.cv_image = camera_image
+                        elif area > MIN_CONTOUR_AREA:
                             self.image_detected = True
+                            #self.cv_image = camera_image
 
 
         except CvBridgeError as cv_err:

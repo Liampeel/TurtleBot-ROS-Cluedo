@@ -6,12 +6,12 @@ import rospy
 from geometry_msgs.msg import Twist, Vector3
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-
+MIN_CONTOUR_AREA = 3000
+CLOSE_ENOUGH_AREA = 30000
 
 class CluedoMovement:
 
-    MIN_CONTOUR_AREA = 750
-    CLOSE_ENOUGH_AREA = 30000
+
 
     def __init__(self):
         self.cv_bridge = CvBridge()
@@ -22,23 +22,27 @@ class CluedoMovement:
         self.desired_velocity = Twist()
         self.cv_image = None
         self.anticlockwise = False
+
         try:
 
-            while True:
-                if self.image_close_enough:
-                    self.desired_velocity.linear.x = 0
-                    self.desired_velocity.angular.z = 0
-                    break
-                if self.centralised and not self.image_close_enough:
+            while not self.image_close_enough:
+                if self.centralised:
                     self.desired_velocity.linear.x = 0.1
                     self.desired_velocity.angular.z = 0
                 if not self.centralised:
                     if self.anticlockwise:
-                        self.desired_velocity.angular.z = -0.2
+                        self.desired_velocity.linear.x = 0.1
+
+                        self.desired_velocity.angular.z = 0.05
                     else:
-                        self.desired_velocity.angular.z = 0.2
-                    self.desired_velocity.linear.x = 0
+                        self.desired_velocity.linear.x = 0.1
+                        self.desired_velocity.angular.z = -0.05
                 self.pub.publish(self.desired_velocity)
+        #    self.desired_velocity.linear.x = 0
+        #    self.desired_velocity.angular.z = 0
+        #    self.pub.publish(self.desired_velocity)
+
+
         except KeyboardInterrupt:
             raise
         except rospy.ROSInterruptException:
@@ -47,6 +51,7 @@ class CluedoMovement:
 
     def callback(self, data):
         try:
+
             # Get the normal camera feed
             camera_image = self.cv_bridge.imgmsg_to_cv2(data, "bgr8")
 
@@ -63,10 +68,10 @@ class CluedoMovement:
                 if self.is_four_sided(cnt):
                     # Check if the contour area is big enough to be the cluedo character
                     area = cv2.contourArea(cnt)
-                    if area > self.CLOSE_ENOUGH_AREA:
+                    if area > CLOSE_ENOUGH_AREA:
                         self.image_close_enough = True
                         self.cv_image = camera_image
-                    elif area > self.MIN_CONTOUR_AREA:
+                    elif area > MIN_CONTOUR_AREA:
                         cv2.drawContours(camera_image, [cnt], 0, (0, 0, 255), -1)
                         M = cv2.moments(cnt)
                         cx =0
@@ -75,14 +80,16 @@ class CluedoMovement:
                             cx, cy = int(M['m10']/M['m00']), int(M['m01']/M['m00'])
                         except ZeroDivisionError:
                             pass
-                        if(cx < centre + 10) and (cx > centre -10):
+
+                        if(cx < centre + 50) and (cx > centre -50):
                             self.centralised = True
-                        elif cx > centre + 10:
-                            self.anticlockwise = True
-                            self.centralised = False
-                        elif cx < centre - 10:
+                        elif cx > centre + 50:
                             self.anticlockwise = False
                             self.centralised = False
+                        elif cx < centre - 50:
+                            self.anticlockwise = True
+                            self.centralised = False
+
         except CvBridgeError as cv_err:
             rospy.loginfo(rospy.get_caller_id + " Error: " + str(cv_err))
 

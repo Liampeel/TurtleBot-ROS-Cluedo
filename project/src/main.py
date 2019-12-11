@@ -129,20 +129,25 @@ if __name__ == '__main__':
             #Move in a spiral
             image_found = pB.publishCircle()
             if image_found:
-                rospy.loginfo("here")
                 cm = CluedoMovement()
-                cd = characterDetection()
-
+                count = 1
+                image = None
                 while True:
                     if cm.image_close_enough:
-
-                        cd.checkPoster(cm.cv_image)
-                        if cd.recognised:
-                            cv2.imwrite('cluedo_character.png', cm.cv_image)
-                            with open('cluedo_character.txt', "w") as textFile:
-                                textFile.write(cd.character)
-                            rospy.loginfo("DETECTED CLUEDO CHARACTER")
+                        if cm.cv_image is not None and count == 1:
+                            cv2.imwrite('test.png', cm.cv_image)
+                            count = count + 1
+                            image = cm.cv_image
                             break
+                while True:
+                    cd = characterDetection()
+                    cd.checkPoster(image)
+                    if cd.recognised:
+                        cv2.imwrite('cluedo_character.png', cm.cv_image)
+                        with open('cluedo_character.txt', "w") as textFile:
+                            textFile.write(cd.character)
+                        rospy.loginfo("DETECTED CLUEDO CHARACTER")
+                        break
             else:
                 rospy.loginfo("help")
 

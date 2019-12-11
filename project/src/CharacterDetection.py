@@ -67,12 +67,13 @@ class characterDetection:
             vis[:h,:w] = self.frame
 
             tracked = self.tracker.track(self.frame)
+            print(len(tracked))
             if len(tracked) > 0:
                 rospy.loginfo("3")
                 for tracked_ob in tracked:
                     rospy.loginfo ('Found ' + tracked_ob.target.data)
                     self.character = tracked_ob.target.data
-                        
+
                     # Calculate Homography
                     h, status = cv2.findHomography(tracked_ob.p0, tracked_ob.p1)
                     self.recognised = True
@@ -91,4 +92,3 @@ def main(args):
 # Check if the node is executing in the main path
 if __name__ == '__main__':
     main(sys.argv)
-
