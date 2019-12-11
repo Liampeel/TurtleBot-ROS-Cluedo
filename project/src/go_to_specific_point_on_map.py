@@ -25,6 +25,7 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 import actionlib
 from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose, Point, Quaternion
+import time
 
 
 class GoToPose:
@@ -38,7 +39,7 @@ class GoToPose:
         # Tell the action client that we want to spin a thread by default
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         rospy.loginfo("Wait for the action server to come up")
-
+        time.sleep(1)
         # Allow up to 5 seconds for the action server to come up
         self.move_base.wait_for_server(rospy.Duration(5))
 

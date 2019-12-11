@@ -94,13 +94,13 @@ class colourIdentifier():
                         self.centralised = True
 
                     if cv2.contourArea(cgreen) > 8000 and circles is not None:
-                        COLOUR_GREEN = np.array([0, 255, 0])
-                        circles = np.uint16(np.around(circles))
-                        for i in circles[0, :]:
-                            centre = (i[0], i[1])
-                            cv2.circle(cv_image, centre, 1, COLOUR_GREEN, 3)
-                            radius = i[2]
-                        cv2.circle(cv_image, centre, radius, COLOUR_GREEN, 3)
+                        # COLOUR_GREEN = np.array([0, 255, 0])
+                        # circles = np.uint16(np.around(circles))
+                        # for i in circles[0, :]:
+                        #     centre = (i[0], i[1])
+                        #     cv2.circle(cv_image, centre, 1, COLOUR_GREEN, 3)
+                        #     radius = i[2]
+                        # cv2.circle(cv_image, centre, radius, COLOUR_GREEN, 3)
                         rospy.loginfo("PICTURE")
                         cv2.imwrite('green_circle.png', cv_image)
                         self.green_circle_detected = True

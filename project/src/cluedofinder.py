@@ -30,24 +30,25 @@ class CluedoFinder:
             camera_image = self.cv_bridge.imgmsg_to_cv2(data, "bgr8")
             if camera_image is not None:
                 # Process the image and get the contours
-                pre_processed_img = self.pre_process(camera_image)
+                pre_processed_img = self.pre_process(camera_image.copy())
                 contours, h = cv2.findContours(pre_processed_img, 1, 2)
 
                 width = np.size(pre_processed_img, 1)
                 centre = (width / 2)
                 # Iterate over the contours and find any that have 4 sides
-                for cnt in contours:
+                if len(contours) > 0:
+                    for cnt in contours:
 
-                    if self.is_four_sided(cnt):
+                        if self.is_four_sided(cnt):
 
-                        # Check if the contour area is big enough to be the cluedo character
-                        area = cv2.contourArea(cnt)
-                        if area > CLOSE_ENOUGH_AREA:
-                            self.image_close_enough = True
-                            #self.cv_image = camera_image
-                        elif area > MIN_CONTOUR_AREA:
-                            self.image_detected = True
-                            #self.cv_image = camera_image
+                            # Check if the contour area is big enough to be the cluedo character
+                            area = cv2.contourArea(cnt)
+                            if area > CLOSE_ENOUGH_AREA:
+                                self.image_close_enough = True
+                                #self.cv_image = camera_image
+                            elif area > MIN_CONTOUR_AREA:
+                                self.image_detected = True
+                                #self.cv_image = camera_image
 
 
         except CvBridgeError as cv_err:
