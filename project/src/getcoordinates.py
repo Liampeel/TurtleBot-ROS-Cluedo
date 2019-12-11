@@ -17,18 +17,29 @@ class GetCoordinates:
         """
         filepath = path.expanduser(filepath)  # just in case the caller gave relative path.
         if not path.exists(filepath):
-            raise EnvironmentError(filepath + " not found")
+            print("[ERROR]: '" + filepath + "' not found")
+            exit(-1)
+        else:
+            # Check that we're getting a yaml file
+            if not filepath.split("/")[-1].split(".")[-1] == "yaml":
+                print("[ERROR]: '" + filepath + "' not a YAML file")
+                exit(-1)
 
         self._filepath = filepath
         self._rooms = self._parse()
 
     def _parse(self):
         parsed = None
-        with open(self._filepath, 'r') as fp:
-            try:
+        try:
+            with open(self._filepath, 'r') as fp:
                 parsed = yaml.safe_load(fp)
-            except (yaml.YAMLError, KeyError), err:
-                raise KeyError("YAML parsing failed: " + str(err))
+        except KeyError as key_err:
+            print("[ERROR]: YAML parsing failed: " + str(key_err))
+            exit(-1)
+        except IOError as io_err:
+            # If they've given a directory
+            print("[ERROR] IO Error: is this path correct? Make sure it's not a directory. " + str(io_err))
+            exit(-1)
         return parsed
 
     def _get_points(self, room_number, points_location):
@@ -72,3 +83,25 @@ class GetCoordinates:
         :return: List containing the x,y coordinates for the specified room. Example x=1, y=3, return value: [1,3]
         """
         return self._get_points(room_number, "centre")
+
+
+def help():
+    print("<Usage> python getcoordinates.py <filepath to input_points.yaml>")
+
+
+if __name__ == '__main__':
+    import sys
+
+    # Check if caller supplied filepath arg
+    if len(sys.argv) > 1:
+        filepath = sys.argv[1]
+        coordinates = GetCoordinates(filepath)
+
+        print("[ROOM 1] Entrance=" + str(coordinates.get_room_entrance(1)))
+        print("[ROOM 1] Centre=" + str(coordinates.get_room_centre(1)))
+        print("[ROOM 2] Entrance=" + str(coordinates.get_room_entrance(2)))
+        print("[ROOM 2] Entrance=" + str(coordinates.get_room_centre(2)))
+    else:
+        help()
+        exit(-1)
+    exit(0)
